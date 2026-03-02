@@ -1,0 +1,210 @@
+.rti-page {
+    padding: var(--space-xl) var(--space-lg);
+}
+
+.rti-layout {
+    display: grid;
+    grid-template-columns: 350px 1fr;
+    gap: var(--space-lg);
+    align-items: start;
+}
+
+/* ─── Legal Pane ─────────────────────────────────────────── */
+.legal-pane {
+    position: sticky;
+    top: 80px;
+    max-height: calc(100vh - 100px);
+    overflow-y: auto;
+}
+
+.pane-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+.pane-subtitle {
+    font-size: 0.8rem;
+    color: var(--text-tertiary);
+    margin-bottom: var(--space-lg);
+}
+
+.legal-empty {
+    text-align: center;
+    padding: var(--space-xl);
+    color: var(--text-tertiary);
+    font-size: 0.9rem;
+}
+
+.legal-sections {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+}
+
+.legal-section {
+    padding: var(--space-md);
+    border-radius: var(--radius-md);
+    background: var(--bg-tertiary);
+    border-left: 3px solid var(--green-500);
+}
+
+.legal-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-sm);
+}
+
+.legal-section-name {
+    font-weight: 700;
+    font-size: 0.82rem;
+    color: var(--green-500);
+}
+
+.relevance-score {
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: var(--radius-full);
+    background: rgba(56, 178, 73, 0.15);
+    color: var(--green-500);
+}
+
+.legal-section-content {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+}
+
+/* ─── Editor ─────────────────────────────────────────────── */
+.anomaly-selector {
+    margin-bottom: var(--space-lg);
+}
+
+.selector-label {
+    display: block;
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-bottom: var(--space-sm);
+}
+
+.selector-select {
+    width: 100%;
+    padding: 10px 14px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font-family: var(--font-family);
+    font-size: 0.85rem;
+    margin-bottom: var(--space-md);
+}
+
+.selector-select:focus {
+    outline: none;
+    border-color: var(--green-500);
+}
+
+.selector-actions {
+    display: flex;
+    gap: var(--space-sm);
+}
+
+.editor-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-md);
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+}
+
+.editor-header h2 {
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.editor-actions {
+    display: flex;
+    gap: var(--space-sm);
+}
+
+.draft-textarea {
+    width: 100%;
+    min-height: 500px;
+    padding: var(--space-lg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    line-height: 1.7;
+    resize: vertical;
+    transition: border-color var(--transition-fast);
+}
+
+.draft-textarea:focus {
+    outline: none;
+    border-color: var(--green-500);
+}
+
+.draft-textarea::placeholder {
+    color: var(--text-tertiary);
+}
+
+/* ─── Previous Drafts ────────────────────────────────────── */
+.previous-drafts {
+    margin-top: var(--space-lg);
+}
+
+.previous-drafts h3 {
+    font-size: 1rem;
+    font-weight: 700;
+    margin-bottom: var(--space-md);
+}
+
+.drafts-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+}
+
+.draft-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: var(--space-sm) var(--space-md);
+    border-radius: var(--radius-sm);
+    background: var(--bg-tertiary);
+    cursor: pointer;
+    transition: background var(--transition-fast);
+}
+
+.draft-item:hover {
+    background: var(--border-color);
+}
+
+.draft-date {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-tertiary);
+}
+
+.draft-preview {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+@media (max-width: 900px) {
+    .rti-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .legal-pane {
+        position: static;
+        max-height: 400px;
+    }
+}

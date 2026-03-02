@@ -1,0 +1,131 @@
+.dashboard-page {
+    padding: var(--space-xl) var(--space-lg);
+}
+
+.page-title {
+    font-size: 1.8rem;
+    font-weight: 900;
+    margin-bottom: var(--space-xs);
+}
+
+.page-subtitle {
+    color: var(--text-tertiary);
+    font-size: 0.95rem;
+    margin-bottom: var(--space-xl);
+}
+
+/* ─── Metrics ────────────────────────────────────────────── */
+.metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: var(--space-md);
+    margin-bottom: var(--space-2xl);
+}
+
+.metric-skeleton {
+    height: 100px;
+    border-radius: var(--radius-lg);
+}
+
+/* ─── Charts ─────────────────────────────────────────────── */
+.charts-section {
+    margin-bottom: var(--space-2xl);
+}
+
+.charts-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-lg);
+    flex-wrap: wrap;
+    gap: var(--space-md);
+}
+
+.charts-header h2 {
+    font-size: 1.3rem;
+    font-weight: 700;
+}
+
+.chart-filters {
+    display: flex;
+    gap: var(--space-xs);
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-md);
+    padding: 3px;
+}
+
+.filter-btn {
+    padding: 6px 16px;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    font-family: var(--font-family);
+    font-weight: 600;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.filter-btn.active {
+    background: var(--bg-card);
+    color: var(--green-500);
+    box-shadow: var(--shadow-sm);
+}
+
+.charts-grid {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr;
+    gap: var(--space-lg);
+}
+
+.chart-card {
+    padding: var(--space-lg);
+}
+
+.chart-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: var(--space-md);
+}
+
+.chart-wrapper {
+    height: 300px;
+    position: relative;
+}
+
+/* ─── Anomaly Feed ───────────────────────────────────────── */
+.anomaly-feed {
+    margin-bottom: var(--space-2xl);
+}
+
+.feed-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-lg);
+}
+
+.feed-header h2 {
+    font-size: 1.3rem;
+    font-weight: 700;
+}
+
+.anomaly-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+}
+
+.empty-state {
+    text-align: center;
+    padding: var(--space-2xl);
+    color: var(--text-tertiary);
+}
+
+@media (max-width: 768px) {
+    .charts-grid {
+        grid-template-columns: 1fr;
+    }
+}

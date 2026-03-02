@@ -1,0 +1,100 @@
+.anomaly-card {
+    padding: var(--space-lg);
+    border-left: 4px solid var(--warning);
+    transition: all var(--transition-base);
+}
+
+.anomaly-card.confidence-high {
+    border-left-color: var(--danger);
+}
+
+.anomaly-card.confidence-medium {
+    border-left-color: var(--warning);
+}
+
+.anomaly-card.confidence-low {
+    border-left-color: var(--info);
+}
+
+.anomaly-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-sm);
+}
+
+.anomaly-badge {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+}
+
+.anomaly-warning {
+    font-size: 1.2rem;
+}
+
+.anomaly-type {
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: var(--text-primary);
+}
+
+.confidence-pill {
+    padding: 3px 10px;
+    border-radius: var(--radius-full);
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.confidence-pill.high {
+    background: var(--danger-bg);
+    color: var(--danger);
+}
+
+.confidence-pill.medium {
+    background: var(--warning-bg);
+    color: var(--warning);
+}
+
+.confidence-pill.low {
+    background: var(--info-bg);
+    color: var(--info);
+}
+
+.anomaly-description {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    margin-bottom: var(--space-md);
+}
+
+.anomaly-record-info {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-sm) var(--space-md);
+    border-radius: var(--radius-sm);
+    background: var(--bg-tertiary);
+    margin-bottom: var(--space-md);
+    font-size: 0.85rem;
+}
+
+.record-tag {
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.record-amount {
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.anomaly-actions {
+    display: flex;
+    gap: var(--space-sm);
+}
+
+.btn-sm {
+    padding: 6px 14px;
+    font-size: 0.8rem;
+}

@@ -1,0 +1,68 @@
+.anomalies-page {
+    padding: var(--space-xl) var(--space-lg);
+}
+
+.anomaly-filters {
+    display: flex;
+    gap: var(--space-sm);
+    flex-wrap: wrap;
+    margin-bottom: var(--space-xl);
+}
+
+.filter-chip {
+    padding: 6px 16px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-full);
+    background: var(--bg-secondary);
+    font-family: var(--font-family);
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.filter-chip:hover {
+    border-color: var(--green-500);
+    color: var(--green-500);
+}
+
+.filter-chip.active {
+    background: rgba(56, 178, 73, 0.1);
+    border-color: var(--green-500);
+    color: var(--green-500);
+}
+
+.anomalies-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+}
+
+.anomaly-skeleton {
+    height: 140px;
+    border-radius: var(--radius-lg);
+}
+
+.empty-state {
+    text-align: center;
+    padding: var(--space-3xl);
+}
+
+.empty-icon {
+    font-size: 3rem;
+    margin-bottom: var(--space-md);
+}
+
+.empty-state h3 {
+    font-size: 1.2rem;
+    margin-bottom: var(--space-sm);
+}
+
+.empty-state p {
+    color: var(--text-tertiary);
+    margin-bottom: var(--space-lg);
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+}

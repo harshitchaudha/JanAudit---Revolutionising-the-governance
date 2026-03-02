@@ -1,0 +1,186 @@
+.about-page {
+    padding: var(--space-xl) var(--space-lg);
+    max-width: 900px;
+}
+
+.about-hero {
+    text-align: center;
+    margin-bottom: var(--space-3xl);
+}
+
+.about-hero h1 {
+    font-size: 2.2rem;
+    font-weight: 900;
+    margin-bottom: var(--space-md);
+}
+
+.about-tagline {
+    font-size: 1.05rem;
+    color: var(--text-secondary);
+    line-height: 1.7;
+    max-width: 680px;
+    margin: 0 auto;
+}
+
+/* ─── How It Works ───────────────────────────────────────── */
+.how-it-works {
+    margin-bottom: var(--space-3xl);
+}
+
+.how-it-works h2,
+.agents-section h2,
+.stack-section h2 {
+    font-size: 1.4rem;
+    font-weight: 800;
+    margin-bottom: var(--space-xl);
+    text-align: center;
+}
+
+.workflow-steps {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-md);
+    flex-wrap: wrap;
+}
+
+.workflow-step {
+    text-align: center;
+    padding: var(--space-lg);
+    border-radius: var(--radius-lg);
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    min-width: 150px;
+    flex: 1;
+    max-width: 180px;
+}
+
+.step-number {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--green-500), var(--green-600));
+    color: white;
+    font-weight: 800;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto var(--space-sm);
+}
+
+.workflow-step h3 {
+    font-size: 0.95rem;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+.workflow-step p {
+    font-size: 0.8rem;
+    color: var(--text-tertiary);
+}
+
+.workflow-arrow {
+    font-size: 1.5rem;
+    color: var(--green-500);
+    font-weight: 700;
+}
+
+/* ─── Agents ─────────────────────────────────────────────── */
+.agents-section {
+    margin-bottom: var(--space-3xl);
+}
+
+.agents-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--space-md);
+}
+
+.agent-card {
+    text-align: center;
+    padding: var(--space-xl);
+}
+
+.agent-icon {
+    font-size: 2.5rem;
+    margin-bottom: var(--space-sm);
+}
+
+.agent-card h3 {
+    font-size: 0.95rem;
+    font-weight: 700;
+    margin-bottom: var(--space-sm);
+}
+
+.agent-card p {
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+/* ─── Stack ──────────────────────────────────────────────── */
+.stack-section {
+    margin-bottom: var(--space-3xl);
+}
+
+.stack-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: var(--space-sm);
+}
+
+.stack-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    padding: var(--space-md) var(--space-lg);
+}
+
+.stack-item:hover {
+    transform: none;
+}
+
+.stack-icon {
+    font-size: 1.5rem;
+}
+
+.stack-item strong {
+    display: block;
+    font-size: 0.9rem;
+}
+
+.stack-desc {
+    font-size: 0.78rem;
+    color: var(--text-tertiary);
+}
+
+/* ─── Disclaimer ─────────────────────────────────────────── */
+.disclaimer {
+    margin-bottom: var(--space-2xl);
+}
+
+.disclaimer .card {
+    border-left: 4px solid var(--warning);
+}
+
+.disclaimer h3 {
+    font-size: 1rem;
+    margin-bottom: var(--space-sm);
+}
+
+.disclaimer p {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    line-height: 1.7;
+}
+
+@media (max-width: 768px) {
+    .workflow-arrow {
+        display: none;
+    }
+
+    .workflow-steps {
+        gap: var(--space-sm);
+    }
+}
