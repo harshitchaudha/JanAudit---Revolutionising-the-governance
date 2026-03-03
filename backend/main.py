@@ -13,8 +13,11 @@ from schemas import DashboardStats
 from routers import documents, anomalies, rti
 
 # Create all database tables
+# This ensures the ORM models are materialized in the database
+
 Base.metadata.create_all(bind=engine)
 
+# FastAPI application setup
 app = FastAPI(
     title="JanAudit API",
     description="AI-Powered RTI & Government Transparency System",
