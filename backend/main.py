@@ -38,7 +38,7 @@ app.include_router(documents.router)
 app.include_router(anomalies.router)
 app.include_router(rti.router)
 
-
+# Basic health/root endpoint
 @app.get("/")
 def root():
     return {
