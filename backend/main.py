@@ -8,9 +8,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import func
 
 from database import engine, Base, get_db, SessionLocal
-from models import Document, FinancialRecord, Anomaly, RTIDraft
+from models import Document, FinancialRecord, Anomaly, RTIDraft, User
 from schemas import DashboardStats
-from routers import documents, anomalies, rti
+from routers import documents, anomalies, rti, users
+from auth import hash_password
 
 # Create all database tables
 # This ensures the ORM models are materialized in the database
@@ -37,6 +38,33 @@ app.add_middleware(
 app.include_router(documents.router)
 app.include_router(anomalies.router)
 app.include_router(rti.router)
+app.include_router(users.router)
+
+
+@app.on_event("startup")
+def seed_admin():
+    """Create or update default admin account."""
+    db = SessionLocal()
+    try:
+        admin = db.query(User).filter(User.email == "admin@janaudit.in").first()
+        if not admin:
+            admin = User(
+                email="admin@janaudit.in",
+                hashedPassword=hash_password("admin123"),
+                fullName="System Admin",
+                role="admin",
+            )
+            db.add(admin)
+            db.commit()
+            print("✅ Admin user created: admin@janaudit.in / admin123")
+        else:
+            # Force update password if it looks like the old bcrypt format
+            if admin.hashedPassword.startswith("$2b$"):
+                admin.hashedPassword = hash_password("admin123")
+                db.commit()
+                print("✅ Admin password updated to new format.")
+    finally:
+        db.close()
 
 # Basic health/root endpoint
 @app.get("/")

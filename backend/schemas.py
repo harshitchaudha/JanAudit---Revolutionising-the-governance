@@ -7,6 +7,35 @@ from typing import Optional, List
 from datetime import datetime
 
 
+# ─── Auth / User ───────────────────────────────────────────
+
+class UserCreate(BaseModel):
+    email: str
+    password: str
+    fullName: str
+    role: str = "citizen"  # citizen | journalist
+
+class UserLogin(BaseModel):
+    email: str
+    password: str
+
+class UserResponse(BaseModel):
+    id: str
+    email: str
+    fullName: str
+    role: str
+    createdAt: datetime
+
+    class Config:
+        from_attributes = True
+
+class TokenResponse(BaseModel):
+    accessToken: str
+    tokenType: str = "bearer"
+    role: str
+    fullName: str
+
+
 # ─── Document ───────────────────────────────────────────────
 
 class DocumentBase(BaseModel):

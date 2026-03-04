@@ -1,10 +1,16 @@
 // Base URL for the API. Change to your production URL when deployed.
 const API_BASE = 'http://localhost:8000';
 
+function authHeaders(token) {
+    if (token) return { 'Authorization': `Bearer ${token}` };
+    const stored = localStorage.getItem('janaudit_token');
+    return stored ? { 'Authorization': `Bearer ${stored}` } : {};
+}
+
 /**
  * Generic helper to perform API requests.
  * - Builds full URL from base + path
- * - Merges provided headers with default Content-Type
+ * - Merges provided headers with default Content-Type and auth tokens
  * - Supports passing additional fetch options (method, body, etc.)
  * - Centralized error handling: throws an Error with a meaningful detail
  *
@@ -18,7 +24,11 @@ async function request(path, options = {}) {
 
     // Perform the HTTP request with default headers
     const res = await fetch(url, {
-        headers: { 'Content-Type': 'application/json', ...options.headers },
+        headers: {
+            'Content-Type': 'application/json',
+            ...authHeaders(options.token),
+            ...options.headers,
+        },
         ...options,
     });
 
@@ -38,7 +48,19 @@ async function request(path, options = {}) {
  * Each method returns a promise resolving to the parsed JSON data.
  */
 export const api = {
-    // Dashboard
+    // ─── Auth ─────────────────────────────────────────
+    login: (email, password) => request('/api/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ email, password }),
+    }),
+    register: (email, password, fullName, role) => request('/api/auth/register', {
+        method: 'POST',
+        body: JSON.stringify({ email, password, fullName, role }),
+    }),
+    getMe: (token) => request('/api/auth/me', { token }),
+    getUsers: () => request('/api/auth/users'),
+
+    // ─── Dashboard ────────────────────────────────────
     // Fetch general statistics for the dashboard
     getStats: () => request('/api/dashboard/stats'),
 
@@ -49,7 +71,7 @@ export const api = {
     // Spending aggregated by department
     getSpendingByDepartment: () => request('/api/charts/spending-by-department'),
 
-    // Documents
+    // ─── Documents ────────────────────────────────────
     // Retrieve a list of documents
     getDocuments: () => request('/api/documents'),
 
@@ -61,17 +83,21 @@ export const api = {
         // Use FormData to send multipart/form-data
         const form = new FormData();
         form.append('file', file);
+        const token = localStorage.getItem('janaudit_token');
 
         // Note: This endpoint uses a different content type (multipart/form-data)
         // We bypass the default request helper to accommodate FormData
-        return fetch(`${API_BASE}/api/documents/upload`, { method: 'POST', body: form })
-            .then(res => {
-                if (!res.ok) throw new Error('Upload failed');
-                return res.json();
-            });
+        return fetch(`${API_BASE}/api/documents/upload`, {
+            method: 'POST',
+            body: form,
+            headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+        }).then(res => {
+            if (!res.ok) throw new Error('Upload failed');
+            return res.json();
+        });
     },
 
-    // Anomalies
+    // ─── Anomalies ────────────────────────────────────
     // Retrieve a list of anomalies with optional query params
     getAnomalies: (params = {}) => {
         const qs = new URLSearchParams(params).toString();
@@ -84,7 +110,7 @@ export const api = {
     // Retrieve available anomaly types
     getAnomalyTypes: () => request('/api/anomalies/types'),
 
-    // RTI (Right To Information)
+    // ─── RTI ──────────────────────────────────────────
     // Generate a draft for a given anomaly
     generateDraft: (anomalyId) => request('/api/rti/generate', {
         method: 'POST',

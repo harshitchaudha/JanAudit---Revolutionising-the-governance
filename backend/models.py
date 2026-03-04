@@ -14,6 +14,17 @@ def generate_uuid():
     return str(uuid.uuid4())
 
 
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    email = Column(String, unique=True, nullable=False, index=True)
+    hashedPassword = Column(String, nullable=False)
+    fullName = Column(String, default="")
+    role = Column(String, default="citizen")  # citizen | journalist | admin
+    createdAt = Column(DateTime, default=datetime.utcnow)
+
+
 class Document(Base):
     __tablename__ = "documents"
 

@@ -89,22 +89,49 @@
     flex-shrink: 0;
 }
 
-.persona-select {
-    padding: 6px 12px;
-    border-radius: var(--radius-md);
-    border: 1px solid var(--border-color);
-    background: var(--bg-secondary);
-    color: var(--text-primary);
-    font-family: var(--font-family);
-    font-size: 0.8rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: border-color var(--transition-fast);
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
-.persona-select:focus {
-    outline: none;
-    border-color: var(--green-500);
+.user-name {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.role-badge {
+    padding: 2px 8px;
+    border-radius: var(--radius-full);
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: #fff;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.logout-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-full);
+    border: 1px solid var(--border-color);
+    background: var(--bg-secondary);
+    font-size: 1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition-fast);
+}
+
+.logout-btn:hover {
+    background: rgba(239, 68, 68, 0.15);
+    border-color: #ef4444;
 }
 
 .theme-btn {
@@ -135,6 +162,15 @@
     cursor: pointer;
 }
 
+.page-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 60vh;
+    color: var(--text-secondary);
+    font-size: 1.2rem;
+}
+
 @media (max-width: 900px) {
     .mobile-toggle {
         display: block;
@@ -158,7 +194,7 @@
         display: flex;
     }
 
-    .persona-select {
+    .user-name {
         display: none;
     }
 }
