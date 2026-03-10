@@ -1,13 +1,10 @@
 """
-Drafting Agent — RTI Application Generation.
-Combines anomaly data and RAG legal references into a structured,
-formal RTI application draft.
+Drafting Agent — Generates RTI Application.
+Creates a clean, official RTI draft using anomaly + financial record + legal references.
 """
 
 from datetime import datetime
 from typing import Dict, List, Optional
-
-from agents.rag import get_legal_context
 
 
 def generate_rti_draft(
@@ -17,128 +14,122 @@ def generate_rti_draft(
     legal_sections: Optional[List[Dict]] = None
 ) -> str:
     """
-    Generate a structured RTI application draft for a detected anomaly.
-    
-    Args:
-        anomaly: Anomaly dict with type, description, confidence
-        record: Financial record dict
-        document: Document metadata dict
-        legal_sections: Optional pre-fetched legal sections; fetched if None
-    
-    Returns:
-        Formatted RTI application text
+    Generate a structured RTI application.
     """
-    if legal_sections is None:
-        legal_sections = get_legal_context(
-            anomaly.get("description", ""),
-            anomaly.get("anomalyType", "")
-        )
 
     today = datetime.now().strftime("%d %B %Y")
-    
-    # Build legal references text
-    legal_refs = ""
-    if legal_sections:
-        legal_refs = "\n".join(
-            f"  - {s['section']}" for s in legal_sections
-        )
-    else:
-        legal_refs = "  - Section 6, Right to Information Act, 2005"
 
-    draft = f"""RIGHT TO INFORMATION APPLICATION
-Under Section 6(1) of the Right to Information Act, 2005
-═══════════════════════════════════════════════════════════
+    anomaly_type = anomaly.get("anomalyType", "Unknown Issue")
+    anomaly_desc = anomaly.get("description", "No description available")
+    confidence = anomaly.get("confidenceScore", 0)
+
+    amount = record.get("amount", 0)
+    projectName = record.get("projectName", "Unknown Project")
+    category = record.get("category", "General")
+
+    department = document.get("sourceDepartment", "Unknown Department")
+    fileName = document.get("fileName", "Uploaded Document")
+
+    # Build legal references
+    if legal_sections:
+        legal_ref_block = "\n".join([f"  • {l['section']}" for l in legal_sections])
+    else:
+        legal_ref_block = "  • Section 6(1), Right to Information Act, 2005"
+
+    # Confidence label
+    if confidence >= 0.8:
+        conf_label = f"High ({confidence:.0%})"
+    elif confidence >= 0.5:
+        conf_label = f"Medium ({confidence:.0%})"
+    else:
+        conf_label = f"Low ({confidence:.0%})"
+
+    # ==========================================================
+    # FINAL RTI APPLICATION
+    # ==========================================================
+
+    draft = f"""
+RIGHT TO INFORMATION APPLICATION  
+Under Section 6(1) of the Right to Information Act, 2005  
+===========================================================
 
 Date: {today}
 
-To,
-The Public Information Officer,
-{document.get('sourceDepartment', '[Department Name]')},
-[Office Address],
-[City, State - PIN Code]
+To,  
+The Public Information Officer  
+{department}  
+[Office Address]  
+[City, District – PIN]
 
-Subject: Request for Information regarding {record.get('projectName', '[Project/Scheme Name]')}
-         under {record.get('category', '[Category]')}
+Subject: Seeking Information related to expenditure under "{projectName}"
 
-Reference: Document — {document.get('fileName', '[Document Reference]')}
+Reference: Financial document "{fileName}"
 
-═══════════════════════════════════════════════════════════
+-----------------------------------------------------------
+REQUEST FOR INFORMATION
+-----------------------------------------------------------
 
-Respected Sir/Madam,
+I kindly request the following information under Section 6(1)
+of the RTI Act, 2005 regarding the expenditure of ₹{amount:,.2f}
+reported under the project/category "{projectName}" ({category}):
 
-I, the undersigned, a citizen of India, hereby seek the following information
-under Section 6(1) of the Right to Information Act, 2005:
+1. A complete and itemized breakdown of the expenditure amounting to  
+   ₹{amount:,.2f}, including all sub-heads and supporting records.
 
-INFORMATION SOUGHT:
-───────────────────
+2. Copies of:
+   - Sanction orders  
+   - Fund release orders  
+   - Work orders / tender documents  
+   - Utilization certificates  
+   - Audited financial statements  
 
-1. Detailed breakdown of the expenditure of ₹{record.get('amount', 0):,.2f} reported
-   under "{record.get('projectName', '[Project Name]')}" in the document
-   "{document.get('fileName', '[Document]')}".
+3. Details of the implementing agency / contractor,  
+   along with bidding process details (if applicable).
 
-2. Copies of all sanction orders, utilization certificates, and audited
-   statements related to this expenditure.
+4. Status of physical progress/work completion related to funds used.
 
-3. Details of the implementing agency/contractor and the process followed
-   for selection (tendering/bidding details if applicable).
+-----------------------------------------------------------
+REASON FOR SEEKING INFORMATION
+-----------------------------------------------------------
 
-4. Timeline of fund disbursement and physical progress reports.
+During analysis, the following anomaly was detected:
 
-BASIS FOR REQUEST:
-──────────────────
+• **Type:** {anomaly_type}  
+• **Details:** {anomaly_desc}  
+• **Confidence Level:** {conf_label}
 
-The following anomaly has been identified through analysis of publicly
-available financial data:
+The presence of this anomaly indicates possible misreporting,
+duplication, or irregularity in public expenditure.  
+As a citizen, I seek this information to promote transparency 
+and ensure accountability in public spending.
 
-  Type: {anomaly.get('anomalyType', 'Unspecified')}
-  
-  Details: {anomaly.get('description', 'No details available.')}
-  
-  Confidence Level: {_confidence_label(anomaly.get('confidenceScore', 0))}
+-----------------------------------------------------------
+LEGAL BASIS
+-----------------------------------------------------------
 
-LEGAL BASIS:
-────────────
+This request is filed under the following provisions:
 
-This application is filed under the provisions of the RTI Act, 2005,
-specifically:
+{legal_ref_block}
 
-{legal_refs}
+-----------------------------------------------------------
+DECLARATION
+-----------------------------------------------------------
 
-DECLARATION:
-────────────
+I am an Indian citizen seeking this information in public interest.  
+I agree to pay requisite fees as applicable under the RTI Act, 2005.
 
-I hereby declare that:
-(a) I am a citizen of India.
-(b) This information is sought in public interest for promoting
-    transparency and accountability in public expenditure.
-(c) I am willing to pay the prescribed fee as applicable under
-    the RTI Act, 2005.
+Kindly provide the requested information within 30 days as mandated  
+under Section 7(1) of the RTI Act.
 
-Please provide the above information within 30 days as stipulated
-under Section 7(1) of the RTI Act, 2005.
+Thank you.
 
-Thanking you,
+Yours faithfully,  
+[Applicant Name]  
+[Address]  
+[Phone]  
+[Email]
 
-Yours faithfully,
-
-[Applicant Name]
-[Address]
-[Contact Number]
-[Email Address]
-
-═══════════════════════════════════════════════════════════
-Note: Application fee of ₹10/- is enclosed herewith.
-(Mode of payment: [IPO/DD/Court Fee Stamp/Online])
-═══════════════════════════════════════════════════════════
+(Enclosed: ₹10 RTI fee via IPO/DD/Online Payment)
+===========================================================
 """
     return draft.strip()
-
-
-def _confidence_label(score: float) -> str:
-    """Convert confidence score to human-readable label."""
-    if score >= 0.8:
-        return f"High ({score:.0%})"
-    elif score >= 0.5:
-        return f"Medium ({score:.0%})"
-    else:
-        return f"Low ({score:.0%})"

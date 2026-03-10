@@ -5,6 +5,8 @@ import './RTIWorkspace.css';
 
 export default function RTIWorkspace() {
     const location = useLocation();
+
+    // STATE
     const [anomalies, setAnomalies] = useState([]);
     const [selectedAnomalyId, setSelectedAnomalyId] = useState(location.state?.anomalyId || '');
     const [draftContent, setDraftContent] = useState('');
@@ -12,42 +14,54 @@ export default function RTIWorkspace() {
     const [loading, setLoading] = useState(false);
     const [drafts, setDrafts] = useState([]);
 
+    // LOAD INITIAL DATA
     useEffect(() => {
-        api.getAnomalies().then(setAnomalies).catch(console.error);
-        api.getDrafts().then(setDrafts).catch(console.error);
+        api.getAnomalies().then(setAnomalies).catch((e) => console.error("Anomaly load failed:", e));
+        api.getDrafts().then(setDrafts).catch((e) => console.error("Draft load failed:", e));
     }, []);
 
+    // LOAD LEGAL CONTEXT WHEN USER SELECTS ANOMALY
     useEffect(() => {
-        if (selectedAnomalyId) {
-            const a = anomalies.find(x => x.id === selectedAnomalyId);
-            if (a) {
-                api.getLegalContext(a.description).then(res => setLegalSections(res.sections || [])).catch(console.error);
-            }
-        }
+        if (!selectedAnomalyId) return;
+
+        const anomaly = anomalies.find(a => a.id === selectedAnomalyId);
+        if (!anomaly) return;
+
+        api.getLegalContext(anomaly.description)
+            .then((res) => setLegalSections(res.sections || []))
+            .catch((e) => {
+                console.error("Failed to load legal context:", e);
+                setLegalSections([]);
+            });
     }, [selectedAnomalyId, anomalies]);
 
+    // GENERATE RTI DRAFT
     const handleGenerate = async () => {
-        if (!selectedAnomalyId) return;
+        if (!selectedAnomalyId) return alert("Please select an anomaly.");
+
         setLoading(true);
         try {
             const result = await api.generateDraft(selectedAnomalyId);
             setDraftContent(result.draftContent);
-            const updated = await api.getDrafts();
-            setDrafts(updated);
+
+            // Refresh previous drafts
+            const updatedDrafts = await api.getDrafts();
+            setDrafts(updatedDrafts);
         } catch (err) {
             console.error(err);
-            alert('Failed to generate draft: ' + err.message);
+            alert("Failed to generate RTI draft.");
         } finally {
             setLoading(false);
         }
     };
 
+    // EXPORT DRAFT AS TXT
     const handleExport = () => {
-        const blob = new Blob([draftContent], { type: 'text/plain' });
+        const blob = new Blob([draftContent], { type: "text/plain" });
         const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
+        const a = document.createElement("a");
         a.href = url;
-        a.download = 'RTI_Application_Draft.txt';
+        a.download = "RTI_Application_Draft.txt";
         a.click();
         URL.revokeObjectURL(url);
     };
@@ -60,33 +74,41 @@ export default function RTIWorkspace() {
             </p>
 
             <div className="rti-layout animate-in stagger-2">
-                {/* Legal Reference Pane */}
+
+                {/* LEFT LEGAL SIDEBAR */}
                 <aside className="legal-pane card">
                     <h2 className="pane-title">📚 Legal References</h2>
                     <p className="pane-subtitle">RTI Act, 2005 — Relevant Sections</p>
 
                     {legalSections.length === 0 ? (
                         <div className="legal-empty">
-                            <p>Select an anomaly to load relevant legal provisions.</p>
+                            <p>Select an anomaly to load relevant legal sections.</p>
                         </div>
                     ) : (
                         <div className="legal-sections">
-                            {legalSections.map((s, i) => (
-                                <div key={i} className="legal-section">
+                            {legalSections.map((section, idx) => (
+                                <div key={idx} className="legal-section">
                                     <div className="legal-section-header">
-                                        <span className="legal-section-name">{s.section}</span>
-                                        <span className="relevance-score">{s.relevance_score.toFixed(1)}</span>
+                                        <span className="legal-section-name">{section.section}</span>
+
+                                        {/* CRASH-PROOF SAFE NUMBER RENDERING */}
+                                        <span className="relevance-score">
+                                            {typeof section.relevance_score === "number"
+                                                ? section.relevance_score.toFixed(1)
+                                                : "N/A"}
+                                        </span>
                                     </div>
-                                    <p className="legal-section-content">{s.content}</p>
+                                    <p className="legal-section-content">{section.content}</p>
                                 </div>
                             ))}
                         </div>
                     )}
                 </aside>
 
-                {/* Main Editor Area */}
+                {/* MAIN EDITOR AREA */}
                 <main className="editor-pane">
-                    {/* Anomaly Selector */}
+
+                    {/* ANOMALY SELECTOR */}
                     <div className="anomaly-selector card">
                         <label className="selector-label">Select Anomaly</label>
                         <select
@@ -95,7 +117,7 @@ export default function RTIWorkspace() {
                             onChange={(e) => setSelectedAnomalyId(e.target.value)}
                         >
                             <option value="">-- Choose an anomaly --</option>
-                            {anomalies.map(a => (
+                            {anomalies.map((a) => (
                                 <option key={a.id} value={a.id}>
                                     [{a.anomalyType}] {a.description?.slice(0, 80)}...
                                 </option>
@@ -108,42 +130,59 @@ export default function RTIWorkspace() {
                                 disabled={!selectedAnomalyId || loading}
                                 onClick={handleGenerate}
                             >
-                                {loading ? '⏳ Generating...' : '🤖 Generate RTI Draft'}
+                                {loading ? "⏳ Generating..." : "🤖 Generate RTI Draft"}
                             </button>
                         </div>
                     </div>
 
-                    {/* Draft Editor */}
+                    {/* EDITOR */}
                     <div className="draft-editor card">
                         <div className="editor-header">
                             <h2>Document Editor</h2>
                             <div className="editor-actions">
-                                <button className="btn btn-secondary" onClick={handleGenerate} disabled={!selectedAnomalyId || loading}>
+                                <button
+                                    className="btn btn-secondary"
+                                    onClick={handleGenerate}
+                                    disabled={!selectedAnomalyId || loading}
+                                >
                                     🔄 Regenerate
                                 </button>
-                                <button className="btn btn-primary" onClick={handleExport} disabled={!draftContent}>
+                                <button
+                                    className="btn btn-primary"
+                                    disabled={!draftContent}
+                                    onClick={handleExport}
+                                >
                                     📥 Export to TXT
                                 </button>
                             </div>
                         </div>
+
                         <textarea
                             className="draft-textarea"
                             value={draftContent}
                             onChange={(e) => setDraftContent(e.target.value)}
-                            placeholder="Select an anomaly and click 'Generate RTI Draft' to create a legally compliant RTI application..."
+                            placeholder="Generated RTI draft will appear here..."
                             rows={24}
                         />
                     </div>
 
-                    {/* Previous Drafts */}
+                    {/* PREVIOUS DRAFTS */}
                     {drafts.length > 0 && (
                         <div className="previous-drafts card">
                             <h3>📋 Previous Drafts</h3>
                             <div className="drafts-list">
-                                {drafts.map(d => (
-                                    <div key={d.id} className="draft-item" onClick={() => setDraftContent(d.draftContent)}>
-                                        <span className="draft-date">{new Date(d.generatedDate).toLocaleString()}</span>
-                                        <span className="draft-preview">{d.draftContent?.slice(0, 60)}...</span>
+                                {drafts.map((d) => (
+                                    <div
+                                        key={d.id}
+                                        className="draft-item"
+                                        onClick={() => setDraftContent(d.draftContent)}
+                                    >
+                                        <span className="draft-date">
+                                            {new Date(d.generatedDate).toLocaleString()}
+                                        </span>
+                                        <span className="draft-preview">
+                                            {d.draftContent?.slice(0, 60)}...
+                                        </span>
                                     </div>
                                 ))}
                             </div>

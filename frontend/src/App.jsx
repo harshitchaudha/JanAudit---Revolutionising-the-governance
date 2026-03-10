@@ -9,6 +9,7 @@ import Anomalies from './pages/Anomalies';
 import RTIWorkspace from './pages/RTIWorkspace';
 import About from './pages/About';
 import Login from './pages/Login';
+import Documents from './pages/Documents';   // ✅ NEW PAGE ADDED
 import './App.css';
 
 /* Route guard — redirect to /login if not authenticated */
@@ -16,7 +17,8 @@ function ProtectedRoute({ children, roles }) {
   const { user, loading } = useAuth();
   if (loading) return <div className="page-loading">Loading…</div>;
   if (!user) return <Navigate to="/login" replace />;
-  if (roles && !roles.includes(user.role)) return <Navigate to="/dashboard" replace />;
+  if (roles && !roles.includes(user.role))
+    return <Navigate to="/dashboard" replace />;
   return children;
 }
 
@@ -26,24 +28,70 @@ function AppRoutes() {
   return (
     <div className="app">
       {user && <Navbar />}
+
       <main className="app-main">
         <Routes>
-          {/* Public */}
-          <Route path="/" element={user ? <Navigate to="/dashboard" replace /> : <Home />} />
-          <Route path="/login" element={user ? <Navigate to="/dashboard" replace /> : <Login />} />
+          {/* Public Routes */}
+          <Route
+            path="/"
+            element={user ? <Navigate to="/dashboard" replace /> : <Home />}
+          />
+          <Route
+            path="/login"
+            element={user ? <Navigate to="/dashboard" replace /> : <Login />}
+          />
           <Route path="/about" element={<About />} />
 
-          {/* Protected */}
-          <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-          <Route path="/upload" element={<ProtectedRoute><Upload /></ProtectedRoute>} />
-          <Route path="/anomalies" element={<ProtectedRoute><Anomalies /></ProtectedRoute>} />
-          <Route path="/rti-workspace" element={
-            <ProtectedRoute roles={['journalist', 'admin']}>
-              <RTIWorkspace />
-            </ProtectedRoute>
-          } />
+          {/* Protected Routes */}
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/upload"
+            element={
+              <ProtectedRoute>
+                <Upload />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/anomalies"
+            element={
+              <ProtectedRoute>
+                <Anomalies />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* ✅ NEW DOCUMENTS PAGE */}
+          <Route
+            path="/documents"
+            element={
+              <ProtectedRoute>
+                <Documents />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* RTI Workspace (role-restricted) */}
+          <Route
+            path="/rti-workspace"
+            element={
+              <ProtectedRoute roles={['journalist', 'admin']}>
+                <RTIWorkspace />
+              </ProtectedRoute>
+            }
+          />
         </Routes>
       </main>
+
       {user && (
         <footer className="app-footer">
           <p>⚖️ JanAudit — AI-Powered RTI & Government Transparency System</p>

@@ -1,168 +1,101 @@
 """
-Analyzer Agent — Statistical Anomaly Detection.
-Scans extracted financial records and flags unusual expenditure patterns.
+Analyzer Agent — Stable anomaly detection
 """
 
 import numpy as np
 import uuid
-from typing import List, Dict, Any
 
 
-def detect_anomalies(records: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    """
-    Analyze a list of financial records and detect anomalies.
-    Uses statistical methods (z-score, IQR) and heuristic checks.
-    Returns a list of anomaly dicts.
-    """
-    anomalies: List[Dict[str, Any]] = []
-
+def detect_anomalies(records):
     if not records:
-        return anomalies
+        return []
 
-    amounts = [r.get("amount", 0) for r in records]
+    anomalies = []
+    amounts = [r["amount"] for r in records]
 
-    # ─── Statistical anomalies (z-score) ───
-    if len(amounts) >= 3:
-        anomalies.extend(_zscore_anomalies(records, amounts))
+    anomalies += _z(records, amounts)
+    anomalies += _iqr(records, amounts)
+    anomalies += _rules(records)
 
-    # ─── IQR-based outliers ───
-    if len(amounts) >= 4:
-        anomalies.extend(_iqr_anomalies(records, amounts))
-
-    # ─── Heuristic checks ───
-    anomalies.extend(_heuristic_checks(records))
-
-    # Deduplicate by recordId + anomalyType
-    seen = set()
-    unique = []
+    # remove duplicates
+    final = {}
     for a in anomalies:
-        key = (a["recordId"], a["anomalyType"])
-        if key not in seen:
-            seen.add(key)
-            unique.append(a)
+        final[(a["recordId"], a["anomalyType"])] = a
 
-    return unique
+    return list(final.values())
 
 
-def _zscore_anomalies(records: List[Dict], amounts: List[float]) -> List[Dict]:
-    """Detect outliers using z-score (threshold > 2.0)."""
-    anomalies = []
-    arr = np.array(amounts, dtype=float)
-    mean = np.mean(arr)
-    std = np.std(arr)
+def _z(records, amounts):
+    if len(amounts) < 3:
+        return []
 
+    arr = np.array(amounts)
+    mean, std = arr.mean(), arr.std()
     if std == 0:
-        return anomalies
+        return []
 
-    z_scores = np.abs((arr - mean) / std)
+    anomalies = []
+    zscores = abs((arr - mean) / std)
 
-    for i, z in enumerate(z_scores):
-        if z > 2.0:
-            confidence = min(round(float(z) / 4.0, 2), 1.0)
+    for i, z in enumerate(zscores):
+        if z > 2:
             anomalies.append({
                 "id": str(uuid.uuid4()),
-                "recordId": records[i].get("id", ""),
+                "recordId": records[i]["id"],
                 "anomalyType": "Statistical Outlier",
-                "description": (
-                    f"Amount ₹{amounts[i]:,.2f} is {z:.1f} standard deviations from the mean "
-                    f"(₹{mean:,.2f}). This expenditure is significantly higher/lower than "
-                    f"comparable items in this document."
-                ),
-                "confidenceScore": confidence
+                "description": f"Amount ₹{records[i]['amount']:,} is {z:.1f}σ from mean.",
+                "confidenceScore": min(z / 4, 1),
             })
-
     return anomalies
 
 
-def _iqr_anomalies(records: List[Dict], amounts: List[float]) -> List[Dict]:
-    """Detect outliers using Interquartile Range method."""
-    anomalies = []
-    arr = np.array(amounts, dtype=float)
-    q1 = np.percentile(arr, 25)
-    q3 = np.percentile(arr, 75)
+def _iqr(records, amounts):
+    if len(amounts) < 4:
+        return []
+
+    arr = np.array(amounts)
+    q1, q3 = np.percentile(arr, 25), np.percentile(arr, 75)
     iqr = q3 - q1
-
     if iqr == 0:
-        return anomalies
+        return []
 
-    lower = q1 - 1.5 * iqr
-    upper = q3 + 1.5 * iqr
+    low, high = q1 - 1.5 * iqr, q3 + 1.5 * iqr
+    anomalies = []
 
-    for i, amount in enumerate(amounts):
-        if amount < lower or amount > upper:
-            direction = "above" if amount > upper else "below"
-            confidence = min(round(abs(amount - (upper if amount > upper else lower)) / iqr * 0.3, 2), 1.0)
+    for r in records:
+        if r["amount"] < low or r["amount"] > high:
             anomalies.append({
                 "id": str(uuid.uuid4()),
-                "recordId": records[i].get("id", ""),
+                "recordId": r["id"],
                 "anomalyType": "IQR Outlier",
-                "description": (
-                    f"Amount ₹{amount:,.2f} falls {direction} the acceptable range "
-                    f"(₹{lower:,.2f} - ₹{upper:,.2f}). This may indicate an irregularity "
-                    f"in the reported expenditure."
-                ),
-                "confidenceScore": confidence
+                "description": f"₹{r['amount']:,} outside normal range ({low:,}–{high:,}).",
+                "confidenceScore": 0.6,
             })
-
     return anomalies
 
 
-def _heuristic_checks(records: List[Dict]) -> List[Dict]:
-    """Apply rule-based checks for common irregularities."""
+def _rules(records):
     anomalies = []
 
-    # Check for suspiciously round amounts
     for r in records:
-        amount = r.get("amount", 0)
-        rid = r.get("id", "")
+        amt = r["amount"]
 
-        # Very large round numbers (potential estimate rather than actual)
-        if amount > 0 and amount >= 100000 and amount % 10000 == 0:
+        if amt >= 100000 and str(amt).endswith("0000"):
             anomalies.append({
                 "id": str(uuid.uuid4()),
-                "recordId": rid,
-                "anomalyType": "Suspiciously Round Amount",
-                "description": (
-                    f"Amount ₹{amount:,.2f} is a suspiciously round figure, which may "
-                    f"indicate an estimated rather than actual expenditure."
-                ),
-                "confidenceScore": 0.35
+                "recordId": r["id"],
+                "anomalyType": "Suspicious Round Amount",
+                "description": f"₹{amt:,} is a round figure.",
+                "confidenceScore": 0.4,
             })
 
-        # Zero or negative amounts
-        if amount <= 0:
+        if amt <= 0:
             anomalies.append({
                 "id": str(uuid.uuid4()),
-                "recordId": rid,
-                "anomalyType": "Missing/Invalid Amount",
-                "description": (
-                    f"Record '{r.get('projectName', 'Unknown')}' has zero or negative amount "
-                    f"(₹{amount:,.2f}). This may indicate missing or incorrectly reported data."
-                ),
-                "confidenceScore": 0.6
+                "recordId": r["id"],
+                "anomalyType": "Invalid Amount",
+                "description": "Amount is zero or negative.",
+                "confidenceScore": 0.8,
             })
-
-    # Check for duplicate project names with different amounts
-    name_amounts: Dict[str, List[float]] = {}
-    name_ids: Dict[str, List[str]] = {}
-    for r in records:
-        name = r.get("projectName", "").lower().strip()
-        if name and name != "unnamed item":
-            name_amounts.setdefault(name, []).append(r.get("amount", 0))
-            name_ids.setdefault(name, []).append(r.get("id", ""))
-
-    for name, amts in name_amounts.items():
-        if len(amts) > 1 and len(set(amts)) > 1:
-            for rid in name_ids[name]:
-                anomalies.append({
-                    "id": str(uuid.uuid4()),
-                    "recordId": rid,
-                    "anomalyType": "Duplicate Entry Discrepancy",
-                    "description": (
-                        f"Project '{name}' appears multiple times with different amounts. "
-                        f"This may indicate duplicate billing or data entry errors."
-                    ),
-                    "confidenceScore": 0.7
-                })
 
     return anomalies
