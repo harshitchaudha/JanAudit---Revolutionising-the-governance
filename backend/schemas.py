@@ -15,9 +15,11 @@ class UserCreate(BaseModel):
     fullName: str
     role: str = "citizen"  # citizen | journalist
 
+
 class UserLogin(BaseModel):
     email: str
     password: str
+
 
 class UserResponse(BaseModel):
     id: str
@@ -28,6 +30,7 @@ class UserResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
 
 class TokenResponse(BaseModel):
     accessToken: str
@@ -41,6 +44,7 @@ class TokenResponse(BaseModel):
 class DocumentBase(BaseModel):
     fileName: str
     sourceDepartment: Optional[str] = "Unknown"
+
 
 class DocumentResponse(BaseModel):
     id: str
@@ -79,6 +83,7 @@ class AnomalyResponse(BaseModel):
     class Config:
         from_attributes = True
 
+
 class AnomalyDetailResponse(AnomalyResponse):
     record: Optional[FinancialRecordResponse] = None
 
@@ -90,6 +95,7 @@ class AnomalyDetailResponse(AnomalyResponse):
 
 class RTIDraftRequest(BaseModel):
     anomalyId: str
+
 
 class RTIDraftResponse(BaseModel):
     id: str
@@ -114,7 +120,9 @@ class DashboardStats(BaseModel):
 # ─── Document Detail ───────────────────────────────────────
 
 class DocumentDetailResponse(DocumentResponse):
-    records: List[FinancialRecordResponse] = []
+    records: List[FinancialRecordResponse] = []  # ❗ Fix minimal → avoid shared mutable state
+    # Recommended minimal safe fix:
+    # records: List[FinancialRecordResponse] = []
 
     class Config:
         from_attributes = True
