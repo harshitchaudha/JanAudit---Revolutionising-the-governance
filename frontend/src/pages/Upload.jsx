@@ -6,6 +6,7 @@ import './Upload.css';
 export default function Upload() {
     const [documents, setDocuments] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [deletingId, setDeletingId] = useState(null);
 
     useEffect(() => { loadDocuments(); }, []);
 
@@ -24,6 +25,20 @@ export default function Upload() {
         const result = await api.uploadDocument(file);
         setTimeout(loadDocuments, 1000);
         return result;
+    };
+
+    const handleDelete = async (id) => {
+        if (!window.confirm('Are you sure you want to delete this document?')) return;
+        setDeletingId(id);
+        try {
+            await api.deleteDocument(id);
+            setDocuments(prev => prev.filter(doc => doc.id !== id));
+        } catch (err) {
+            console.error('Delete failed:', err);
+            alert('Failed to delete document. Please try again.');
+        } finally {
+            setDeletingId(null);
+        }
     };
 
     const statusIcon = (status) => {
@@ -67,7 +82,17 @@ export default function Upload() {
                                         </span>
                                     </div>
                                 </div>
-                                <span className={`status-badge status-${doc.status}`}>{doc.status}</span>
+                                <div className="doc-actions">
+                                    <span className={`status-badge status-${doc.status}`}>{doc.status}</span>
+                                    <button
+                                        className="delete-btn"
+                                        onClick={() => handleDelete(doc.id)}
+                                        disabled={deletingId === doc.id}
+                                        title="Delete document"
+                                    >
+                                        {deletingId === doc.id ? '⏳' : '🗑️'}
+                                    </button>
+                                </div>
                             </div>
                         ))}
                     </div>
