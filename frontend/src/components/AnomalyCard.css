@@ -1,100 +1,204 @@
 .anomaly-card {
     padding: var(--space-lg);
-    border-left: 4px solid var(--warning);
-    transition: all var(--transition-base);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
-.anomaly-card.confidence-high {
-    border-left-color: var(--danger);
+.anomaly-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.18);
 }
 
-.anomaly-card.confidence-medium {
-    border-left-color: var(--warning);
-}
+/* ── Colored left border by severity ── */
+.confidence-border-red    { border-left: 4px solid #ef4444; }
+.confidence-border-orange { border-left: 4px solid #f97316; }
+.confidence-border-yellow { border-left: 4px solid #eab308; }
 
-.anomaly-card.confidence-low {
-    border-left-color: var(--info);
-}
-
-.anomaly-header {
+/* ── Header ── */
+.ac-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: var(--space-sm);
-}
-
-.anomaly-badge {
-    display: flex;
-    align-items: center;
+    flex-wrap: wrap;
     gap: var(--space-sm);
 }
 
-.anomaly-warning {
-    font-size: 1.2rem;
-}
-
-.anomaly-type {
-    font-weight: 700;
-    font-size: 0.9rem;
-    color: var(--text-primary);
-}
-
-.confidence-pill {
-    padding: 3px 10px;
+.ac-type-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 12px;
     border-radius: var(--radius-full);
-    font-size: 0.75rem;
+    font-size: 0.82rem;
     font-weight: 700;
+    letter-spacing: 0.02em;
 }
 
-.confidence-pill.high {
-    background: var(--danger-bg);
-    color: var(--danger);
+.ac-type-badge[data-color="red"] {
+    background: rgba(239, 68, 68, 0.12);
+    color: #ef4444;
+}
+.ac-type-badge[data-color="orange"] {
+    background: rgba(249, 115, 22, 0.12);
+    color: #f97316;
+}
+.ac-type-badge[data-color="yellow"] {
+    background: rgba(234, 179, 8, 0.12);
+    color: #ca8a04;
 }
 
-.confidence-pill.medium {
-    background: var(--warning-bg);
-    color: var(--warning);
+.ac-type-label {
+    font-size: 0.82rem;
 }
 
-.confidence-pill.low {
-    background: var(--info-bg);
-    color: var(--info);
-}
-
-.anomaly-description {
-    font-size: 0.875rem;
-    color: var(--text-secondary);
-    line-height: 1.6;
-    margin-bottom: var(--space-md);
-}
-
-.anomaly-record-info {
+/* ── Confidence meter ── */
+.confidence-meter {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    padding: var(--space-sm) var(--space-md);
-    border-radius: var(--radius-sm);
-    background: var(--bg-tertiary);
-    margin-bottom: var(--space-md);
-    font-size: 0.85rem;
+    gap: 8px;
 }
 
-.record-tag {
+.meter-bar {
+    width: 80px;
+    height: 6px;
+    background: var(--bg-tertiary, rgba(255,255,255,0.08));
+    border-radius: 99px;
+    overflow: hidden;
+}
+
+.meter-fill {
+    height: 100%;
+    border-radius: 99px;
+    transition: width 0.4s ease;
+}
+
+.meter-label {
+    font-size: 0.78rem;
+    font-weight: 700;
+    min-width: 90px;
+    text-align: right;
+}
+
+/* ── What this means box ── */
+.ac-what-box {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 10px 14px;
+    font-size: 0.83rem;
+    line-height: 1.5;
     color: var(--text-secondary);
-    font-weight: 500;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
 }
 
-.record-amount {
+.ac-what-label {
     font-weight: 700;
     color: var(--text-primary);
+    white-space: nowrap;
 }
 
-.anomaly-actions {
+.ac-what-text {
+    color: var(--text-secondary);
+}
+
+/* ── Location grid ── */
+.ac-location-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: var(--space-sm);
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 14px;
+}
+
+.ac-loc-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.ac-loc-icon {
+    font-size: 1rem;
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+
+.ac-loc-key {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 2px;
+}
+
+.ac-loc-val {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    word-break: break-word;
+}
+
+.ac-loc-val.amount-highlight {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #f97316;
+}
+
+/* ── Expandable description ── */
+.ac-description-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.ac-expand-btn {
+    background: none;
+    border: none;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    text-align: left;
+    padding: 0;
+    transition: color 0.15s;
+}
+
+.ac-expand-btn:hover {
+    color: var(--green-500);
+}
+
+.ac-description-box {
+    background: rgba(255,255,255,0.03);
+    border-left: 3px solid var(--border-color);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    padding: 10px 14px;
+    animation: fadeIn 0.2s ease;
+}
+
+.ac-description-text {
+    font-size: 0.85rem;
+    line-height: 1.7;
+    color: var(--text-secondary);
+    margin: 0;
+    white-space: pre-wrap;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Actions ── */
+.ac-actions {
     display: flex;
     gap: var(--space-sm);
-}
-
-.btn-sm {
-    padding: 6px 14px;
-    font-size: 0.8rem;
+    flex-wrap: wrap;
+    padding-top: var(--space-xs);
+    border-top: 1px solid var(--border-color);
 }
