@@ -1,5 +1,7 @@
 """
-Auditor Agent — Improved PDF Extraction with richer context
+Auditor Agent — pdfplumber-based extraction for digital government PDFs.
+Works with CAG reports, state audit reports, budget documents, etc.
+No external API required.
 """
 
 import pdfplumber
@@ -8,130 +10,133 @@ import uuid
 from datetime import datetime
 
 
-def extract_financial_data(pdf_path):
+def extract_financial_data(pdf_path: str) -> dict:
     records = []
     full_text = ""
-    all_tables = []
 
-    with pdfplumber.open(pdf_path) as pdf:
-        for page_num, page in enumerate(pdf.pages):
-            text = page.extract_text() or ""
-            full_text += text + "\n"
+    try:
+        with pdfplumber.open(pdf_path) as pdf:
+            for page_num, page in enumerate(pdf.pages):
+                text = page.extract_text() or ""
+                full_text += text + "\n"
+                for table in (page.extract_tables() or []):
+                    records.extend(_parse_table(table, page_num + 1))
 
-            tables = page.extract_tables()
-            for table in tables:
-                parsed = _parse_table(table, page_num + 1)
-                records.extend(parsed)
-                all_tables.append(table)
+        if not records:
+            print("[Auditor] No tables found — trying text extraction")
+            records = _parse_text_lines(full_text)
 
-    # Only fall back to text parsing if truly no structured data found
-    if not records:
-        records = _parse_text(full_text)
+    except Exception as e:
+        print(f"[Auditor] Extraction error: {e}")
 
-    # Enrich records with document-level context
+    # Deduplicate by name+amount
+    seen = {}
+    unique_records = []
+    for r in records:
+        key = f"{r['projectName'].lower().strip()}_{r['amount']}"
+        if key not in seen:
+            seen[key] = True
+            unique_records.append(r)
+
+    # Enrich categories
+    for r in unique_records:
+        if r.get("category") in ("General", "", None):
+            r["category"] = _infer_category(r["projectName"])
+
     department = _detect_department(full_text)
     year = _detect_year(full_text)
-    scheme = _detect_scheme(full_text)
 
-    for r in records:
-        if r.get("category") in ("General", "", None):
-            r["category"] = scheme or "General"
-        r["department"] = department
-        r["financialYear"] = year
+    print(f"[Auditor] Extracted {len(unique_records)} records — {department} ({year})")
 
     return {
-        "records": records,
+        "records": unique_records,
         "department": department,
         "financialYear": year,
-        "scheme": scheme,
+        "scheme": _detect_scheme(full_text),
     }
 
+
+# ─────────────────────────────────────────────────────────────
+# TABLE PARSER
+# ─────────────────────────────────────────────────────────────
 
 def _parse_table(table, page_num=1):
     results = []
     if not table or len(table) < 2:
         return results
 
-    # Clean headers
-    headers = [re.sub(r"\s+", " ", str(x or "")).lower().strip() for x in table[0]]
+    headers = [re.sub(r"\s+", " ", str(x or "")).lower().strip() for x in (table[0] or [])]
 
-    name_idx     = _find(headers, ["head of account", "scheme", "project", "item", "particulars", "particular", "name", "description", "work"])
-    category_idx = _find(headers, ["category", "type", "nature", "sub-head", "sub head", "major head"])
-    amount_idx   = _find(headers, ["actual expenditure", "expenditure", "amount", "total", "rs.", "inr", "outlay", "disbursement", "payment"])
-    budget_idx   = _find(headers, ["budget", "provision", "sanctioned", "approved", "estimated"])
-    date_idx     = _find(headers, ["date", "year", "month", "period"])
+    name_idx        = _find_col(headers, ["name of department", "department", "scheme",
+                                           "particulars", "particular", "head of account",
+                                           "item", "project", "description", "work", "name"])
+    expenditure_idx = _find_col(headers, ["expenditure", "actual expenditure", "actual",
+                                           "amount", "total", "rs.", "inr", "outlay",
+                                           "current year", "2024", "2023", "2022"])
+    budget_idx      = _find_col(headers, ["budget provision", "budget", "provision",
+                                           "sanctioned", "approved", "estimated", "previous year"])
+    category_idx    = _find_col(headers, ["category", "type", "nature", "schedule", "sector"])
+    date_idx        = _find_col(headers, ["date", "year", "period"])
 
-    for row_num, row in enumerate(table[1:], start=2):
-        if not row or not any(cell for cell in row if cell):
+    if name_idx < 0:
+        name_idx = _find_first_text_col(table)
+    if expenditure_idx < 0:
+        expenditure_idx = _find_last_numeric_col(table)
+
+    for row in table[1:]:
+        if not row or not any(row):
             continue
 
-        raw_name = _safe(row, name_idx, "")
-        raw_amount = _safe(row, amount_idx, "")
+        raw_name   = _safe_cell(row, name_idx, "")
+        raw_amount = _safe_cell(row, expenditure_idx, "")
 
-        # Skip rows that look like sub-headers or totals
-        lower_name = raw_name.lower()
-        if any(skip in lower_name for skip in ["total", "grand total", "sub total", "nil", "---"]):
+        if _is_skip_row(raw_name):
             continue
 
         amount = _clean_amount(raw_amount)
         if amount <= 0:
             continue
 
-        # Try to get a meaningful name — fallback to first non-empty cell
-        if not raw_name or raw_name == "Unnamed Item":
-            raw_name = _first_nonempty(row) or "Unnamed Item"
+        if not raw_name or raw_name.strip().isdigit():
+            raw_name = _first_text_cell(row) or "Unnamed Item"
 
-        category = _safe(row, category_idx, "")
-        if not category:
-            category = _infer_category(raw_name)
+        category = _safe_cell(row, category_idx, "") or _infer_category(raw_name)
+        budget   = _clean_amount(_safe_cell(row, budget_idx, "0"))
 
-        budget_provision = _clean_amount(_safe(row, budget_idx, "0"))
-
-        r = {
+        results.append({
             "id": str(uuid.uuid4()),
             "projectName": _clean_name(raw_name),
-            "category": category or "General",
+            "category": category,
             "amount": amount,
-            "budgetProvision": budget_provision,
-            "transactionDate": _parse_date(_safe(row, date_idx)),
+            "budgetProvision": budget,
+            "transactionDate": _parse_date(_safe_cell(row, date_idx, "")),
             "pageNum": page_num,
-            "rowNum": row_num,
-        }
-        results.append(r)
+        })
 
     return results
 
 
-def _parse_text(text):
-    """
-    Fallback text parser — uses stricter patterns to avoid noise.
-    Looks for lines that have a label and a currency amount.
-    """
+# ─────────────────────────────────────────────────────────────
+# TEXT LINE PARSER — fallback
+# ─────────────────────────────────────────────────────────────
+
+def _parse_text_lines(text):
     results = []
-    lines = text.split("\n")
-
-    # Pattern: "Some description text ..... ₹1,23,456" or "Some text : 1,23,456"
     pattern = re.compile(
-        r"^([A-Za-z][A-Za-z0-9 \-/\(\)]{4,80}?)\s*[:\.\-]{0,3}\s*(₹\s*[\d,]+(?:\.\d+)?|[\d,]{4,}(?:\.\d+)?)\s*$"
+        r"^([A-Za-z][A-Za-z0-9 &\-/\(\)\.]{3,80}?)\s*[:\.\-]{0,3}\s*"
+        r"((?:₹\s*)?[\d,]{4,}(?:\.\d{1,2})?)\s*$"
     )
-
-    for line in lines:
+    for line in text.split("\n"):
         line = line.strip()
-        if not line:
+        if not line or len(line) < 8:
             continue
         m = pattern.match(line)
         if not m:
             continue
-
         name = _clean_name(m.group(1))
-        amt = _clean_amount(m.group(2))
-
-        # Skip if name looks like a header or footer
-        if not name or amt <= 0:
+        amt  = _clean_amount(m.group(2))
+        if not name or amt <= 0 or _is_skip_name(name):
             continue
-        if any(skip in name.lower() for skip in ["total", "page", "table", "source", "note", "figure"]):
-            continue
-
         results.append({
             "id": str(uuid.uuid4()),
             "projectName": name,
@@ -140,95 +145,89 @@ def _parse_text(text):
             "budgetProvision": 0,
             "transactionDate": None,
         })
-
     return results
 
 
-def _clean_name(name):
-    """Remove numbering, extra whitespace, special chars from item names."""
-    if not name:
-        return "Unnamed Item"
-    # Remove leading numbering like "1.", "2)", "i.", "a)"
-    name = re.sub(r"^\s*[\d]+[\.\)]\s*", "", name)
-    name = re.sub(r"^\s*[ivxlIVXL]+[\.\)]\s*", "", name)
-    # Collapse whitespace
-    name = re.sub(r"\s+", " ", name).strip()
-    return name if len(name) > 2 else "Unnamed Item"
+# ─────────────────────────────────────────────────────────────
+# COLUMN DETECTION
+# ─────────────────────────────────────────────────────────────
 
-
-def _infer_category(name):
-    """Infer category from item name keywords."""
-    name_lower = name.lower()
-    mapping = {
-        "salary|wage|pay|allowance|pension|staff|employee|hr": "Personnel",
-        "road|bridge|construction|building|civil|infrastructure|work": "Infrastructure",
-        "medical|health|hospital|medicine|drug|equipment": "Health",
-        "school|education|training|scholarship|book|uniform": "Education",
-        "purchase|procurement|supply|material|stationery|equipment|furniture": "Procurement",
-        "travel|transport|vehicle|fuel|tour|TA|DA": "Travel & Transport",
-        "electricity|water|telephone|internet|utility|rent|maintenance": "Utilities & Maintenance",
-        "scheme|programme|project|yojana|mission": "Scheme/Programme",
-        "audit|inspection|survey|study|consultant": "Administrative",
-    }
-    for pattern, category in mapping.items():
-        if re.search(pattern, name_lower):
-            return category
-    return "General"
-
-
-def _clean_amount(value):
-    if not value:
-        return 0.0
-    # Remove currency symbols, spaces, text
-    v = re.sub(r"[₹,Rs.\s]", "", str(value))
-    v = re.sub(r"[A-Za-z]", "", v)
-    v = v.strip()
-    try:
-        return float(v) if v else 0.0
-    except:
-        return 0.0
-
-
-def _detect_department(text):
-    patterns = [
-        r"department\s+of\s+([A-Za-z &,]+)",
-        r"ministry\s+of\s+([A-Za-z &,]+)",
-        r"office\s+of\s+the\s+([A-Za-z &,]+)",
-        r"directorate\s+of\s+([A-Za-z &,]+)",
-        r"commissioner(?:ate)?\s+of\s+([A-Za-z &,]+)",
-    ]
-    for p in patterns:
-        m = re.search(p, text, re.I)
-        if m:
-            return m.group(1).strip().title()
-    return "Unknown Department"
-
-
-def _detect_year(text):
-    m = re.search(r"(?:financial year|year|fy)[:\s]*(\d{4}[\-–]\d{2,4})", text, re.I)
-    if m:
-        return m.group(1)
-    m = re.search(r"(\d{4}[\-–]\d{2,4})", text)
-    if m:
-        return m.group(1)
-    return None
-
-
-def _detect_scheme(text):
-    m = re.search(r"(?:scheme|programme|project|yojana|mission)[:\s]+([A-Za-z ]{4,60})", text, re.I)
-    if m:
-        return m.group(1).strip().title()
-    return None
-
-
-def _find(headers, keys):
+def _find_col(headers, keywords):
     for i, h in enumerate(headers):
-        if any(k in h for k in keys):
+        if any(k in h for k in keywords):
             return i
     return -1
 
 
-def _safe(row, idx, default=""):
+def _find_first_text_col(table):
+    if not table or not table[0]:
+        return 0
+    for col_idx in range(len(table[0])):
+        text_count = sum(
+            1 for row in table[1:6]
+            if col_idx < len(row) and str(row[col_idx] or "").strip()
+            and not re.match(r"^[\d\.,\-\(\)₹\s]+$", str(row[col_idx] or "").strip())
+        )
+        if text_count >= 2:
+            return col_idx
+    return 0
+
+
+def _find_last_numeric_col(table):
+    if not table or not table[0]:
+        return -1
+    for col_idx in range(len(table[0]) - 1, -1, -1):
+        num_count = sum(
+            1 for row in table[1:6]
+            if col_idx < len(row) and str(row[col_idx] or "").strip()
+            and re.match(r"^[\d\.,\-\(\)₹\s]+$", str(row[col_idx] or "").strip())
+            and len(str(row[col_idx] or "").strip()) > 1
+        )
+        if num_count >= 2:
+            return col_idx
+    return -1
+
+
+# ─────────────────────────────────────────────────────────────
+# ROW / NAME HELPERS
+# ─────────────────────────────────────────────────────────────
+
+def _is_skip_row(name):
+    name_lower = (name or "").lower().strip()
+    skip = ["total", "grand total", "sub total", "sub-total", "nil",
+            "---", "s.no", "sl.no", "serial", "sr.no", "source", "note"]
+    if any(s in name_lower for s in skip):
+        return True
+    if re.match(r"^\d+\.?$", name_lower):
+        return True
+    return False
+
+
+def _is_skip_name(name):
+    name_lower = name.lower()
+    return any(s in name_lower for s in
+               ["total", "grand total", "sub total", "page", "source", "note", "nil"])
+
+
+def _clean_name(name):
+    if not name:
+        return "Unnamed Item"
+    name = re.sub(r"^\s*[\d]+[\.\)]\s*", "", name)
+    name = re.sub(r"^\s*[ivxlcdmIVXLCDM]+[\.\)]\s*", "", name)
+    name = re.sub(r"^\s*[\(\[][a-zA-Z\d]+[\)\]]\s*", "", name)
+    name = re.sub(r"\s+", " ", name).strip()
+    return name if len(name) > 2 else "Unnamed Item"
+
+
+def _first_text_cell(row):
+    for cell in row:
+        val = str(cell or "").strip()
+        if val and not re.match(r"^[\d\.,\-\(\)₹\s]+$", val) and len(val) > 2:
+            return val
+    return ""
+
+
+def _safe_cell(row, idx, default=""):
     try:
         if idx < 0:
             return default
@@ -238,20 +237,94 @@ def _safe(row, idx, default=""):
         return default
 
 
-def _first_nonempty(row):
-    for cell in row:
-        val = str(cell).strip() if cell else ""
-        if val and val.lower() not in ("none", "null", ""):
-            return val
-    return ""
+# ─────────────────────────────────────────────────────────────
+# AMOUNT / DATE HELPERS
+# ─────────────────────────────────────────────────────────────
+
+def _clean_amount(value):
+    if not value:
+        return 0.0
+    v = re.sub(r"[₹,Rs.\s]", "", str(value))
+    v = re.sub(r"[A-Za-z]", "", v)
+    if v.startswith("(") and v.endswith(")"):
+        v = "-" + v[1:-1]
+    v = v.strip()
+    try:
+        return float(v) if v else 0.0
+    except:
+        return 0.0
 
 
 def _parse_date(s):
     if not s:
         return None
-    for fmt in ("%d/%m/%Y", "%d-%m-%Y", "%Y-%m-%d", "%m/%Y", "%Y"):
+    for fmt in ("%d/%m/%Y", "%d-%m-%Y", "%Y-%m-%d", "%m/%Y"):
         try:
             return datetime.strptime(s.strip(), fmt).isoformat()
         except:
             pass
     return None
+
+
+# ─────────────────────────────────────────────────────────────
+# METADATA DETECTION
+# ─────────────────────────────────────────────────────────────
+
+def _detect_department(text):
+    patterns = [
+        r"nagar nigam\s+[A-Za-z]+",
+        r"government of [A-Za-z ]+?(?=\n|audit|balance)",
+        r"department of [A-Za-z &,]+?(?=\n|,|\.|for)",
+        r"ministry of [A-Za-z &,]+?(?=\n|,|\.|for)",
+        r"office of the [A-Za-z &,]+?(?=\n|,|\.)",
+        r"comptroller and auditor general",
+    ]
+    for p in patterns:
+        m = re.search(p, text, re.I)
+        if m:
+            return m.group(0).strip().title()
+    for line in text.split("\n")[:10]:
+        line = line.strip()
+        if line and len(line) > 5 and not re.match(r"^[\d\W]+$", line):
+            return line.title()
+    return "Unknown Department"
+
+
+def _detect_year(text):
+    m = re.search(r"(?:year|fy|financial year|period)[:\s]*(\d{4}[-–]\d{2,4})", text, re.I)
+    if m:
+        return m.group(1)
+    m = re.search(r"\b(\d{4}[-–]\d{2,4})\b", text)
+    return m.group(1) if m else None
+
+
+def _detect_scheme(text):
+    m = re.search(r"(?:scheme|programme|yojana|mission)[:\s]+([A-Za-z ]{4,60})", text, re.I)
+    return m.group(1).strip().title() if m else None
+
+
+def _infer_category(name):
+    name_lower = (name or "").lower()
+    mapping = {
+        r"salary|wage|pay|allowance|pension|staff|employee|establishment": "Personnel",
+        r"road|bridge|construction|building|civil|infrastructure|drain": "Infrastructure",
+        r"medical|health|hospital|medicine|drug|sanit": "Health",
+        r"school|education|training|scholarship|book|uniform": "Education",
+        r"purchase|procurement|supply|material|stationery|equipment|furniture": "Procurement",
+        r"travel|transport|vehicle|fuel|conveyance": "Travel & Transport",
+        r"electricity|water|telephone|rent|maintenance|repair": "Utilities & Maintenance",
+        r"scheme|programme|project|yojana|mission|grant|fund": "Scheme/Programme",
+        r"tax|revenue|income|receipt|collection": "Revenue",
+        r"depreciation|revaluation|reserve": "Accounting Adjustment",
+        r"liability|payable|outstanding": "Liability",
+        r"asset|property|land|investment": "Fixed Asset",
+        r"receivable|debtor|advance|loan": "Current Asset",
+        r"social welfare|welfare|subsidy|relief": "Social Welfare",
+        r"urban|municipal|civic|nagar": "Municipal Services",
+        r"labour|employment|mgnrega": "Labour & Employment",
+        r"disaster|flood|emergency": "Disaster Management",
+    }
+    for pattern, category in mapping.items():
+        if re.search(pattern, name_lower):
+            return category
+    return "General"
