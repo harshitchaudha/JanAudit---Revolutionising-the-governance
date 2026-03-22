@@ -4,15 +4,15 @@ import { AuthProvider, useAuth } from './AuthContext';
 import Navbar from './components/Navbar';
 import Home from './pages/Home';
 import Dashboard from './pages/Dashboard';
+import Expenditure from './pages/Expenditure';
 import Upload from './pages/Upload';
 import Anomalies from './pages/Anomalies';
 import RTIWorkspace from './pages/RTIWorkspace';
 import About from './pages/About';
 import Login from './pages/Login';
-import Documents from './pages/Documents';   // ✅ NEW PAGE ADDED
+import Documents from './pages/Documents';
 import './App.css';
 
-/* Route guard — redirect to /login if not authenticated */
 function ProtectedRoute({ children, roles }) {
   const { user, loading } = useAuth();
   if (loading) return <div className="page-loading">Loading…</div>;
@@ -31,56 +31,18 @@ function AppRoutes() {
 
       <main className="app-main">
         <Routes>
-          {/* Public Routes */}
-          <Route
-            path="/"
-            element={user ? <Navigate to="/dashboard" replace /> : <Home />}
-          />
-          <Route
-            path="/login"
-            element={user ? <Navigate to="/dashboard" replace /> : <Login />}
-          />
+          {/* Public */}
+          <Route path="/"      element={user ? <Navigate to="/dashboard" replace /> : <Home />} />
+          <Route path="/login" element={user ? <Navigate to="/dashboard" replace /> : <Login />} />
           <Route path="/about" element={<About />} />
 
-          {/* Protected Routes */}
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            }
-          />
+          {/* Protected */}
+          <Route path="/dashboard"   element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+          <Route path="/expenditure" element={<ProtectedRoute><Expenditure /></ProtectedRoute>} />
+          <Route path="/upload"      element={<ProtectedRoute><Upload /></ProtectedRoute>} />
+          <Route path="/anomalies"   element={<ProtectedRoute><Anomalies /></ProtectedRoute>} />
+          <Route path="/documents"   element={<ProtectedRoute><Documents /></ProtectedRoute>} />
 
-          <Route
-            path="/upload"
-            element={
-              <ProtectedRoute>
-                <Upload />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/anomalies"
-            element={
-              <ProtectedRoute>
-                <Anomalies />
-              </ProtectedRoute>
-            }
-          />
-
-          {/* ✅ NEW DOCUMENTS PAGE */}
-          <Route
-            path="/documents"
-            element={
-              <ProtectedRoute>
-                <Documents />
-              </ProtectedRoute>
-            }
-          />
-
-          {/* RTI Workspace (role-restricted) */}
           <Route
             path="/rti-workspace"
             element={
@@ -101,7 +63,7 @@ function AppRoutes() {
   );
 }
 
-function App() {
+export default function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
@@ -112,5 +74,3 @@ function App() {
     </ThemeProvider>
   );
 }
-
-export default App;

@@ -1,0 +1,181 @@
+.exp-page {
+    padding: 40px 0 80px;
+    min-height: 100vh;
+    background: transparent;
+}
+
+/* ─── Header ─────────────────────────────────────────────── */
+.exp-header {
+    display: flex; align-items: center;
+    gap: 16px; margin-bottom: 32px;
+    flex-wrap: wrap;
+}
+
+.exp-tricolor {
+    width: 4px; height: 48px; flex-shrink: 0;
+    border-radius: 99px; overflow: hidden;
+    background: linear-gradient(to bottom, #FF9933 33.33%, rgba(255,255,255,0.6) 33.33% 66.66%, #138808 66.66%);
+}
+
+.exp-title {
+    font-size: 24px; font-weight: 800;
+    color: #fff; margin: 0 0 3px;
+    letter-spacing: -0.02em;
+}
+
+.exp-subtitle {
+    font-size: 13px; color: rgba(255,255,255,0.35); margin: 0;
+}
+
+/* ─── Filters ────────────────────────────────────────────── */
+.exp-filters {
+    display: flex; gap: 4px; margin-left: auto;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px; padding: 4px;
+}
+
+.filter-btn {
+    padding: 6px 16px; border-radius: 8px;
+    border: none; background: transparent;
+    color: rgba(255,255,255,0.38);
+    font-size: 13px; font-weight: 500;
+    cursor: pointer;
+    transition: all 140ms cubic-bezier(0.4,0,0.2,1);
+    font-family: var(--font-family);
+}
+
+.filter-btn.active {
+    background: rgba(255,153,51,0.12);
+    color: #FF9933;
+    border: 1px solid rgba(255,153,51,0.25);
+}
+
+.filter-btn:hover:not(.active) { color: rgba(255,255,255,0.65); }
+
+/* ─── Charts grid ────────────────────────────────────────── */
+.exp-charts-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px; margin-bottom: 20px;
+}
+
+@media (max-width: 768px) { .exp-charts-grid { grid-template-columns: 1fr; } }
+
+.exp-chart-card {
+    position: relative;
+    background: rgba(6, 14, 35, 0.72);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 16px; padding: 24px;
+    backdrop-filter: blur(16px);
+    overflow: hidden;
+}
+
+.exp-chart-bar {
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 2px;
+    border-radius: 16px 16px 0 0; opacity: 0.6;
+}
+
+.exp-chart-title {
+    font-size: 11px; font-weight: 600;
+    color: rgba(255,255,255,0.35);
+    margin: 0 0 20px;
+    text-transform: uppercase; letter-spacing: 0.08em;
+}
+
+.exp-chart-wrapper { height: 280px; }
+
+/* ─── Table card ─────────────────────────────────────────── */
+.exp-table-card {
+    position: relative;
+    background: rgba(6, 14, 35, 0.72);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 16px; padding: 24px;
+    backdrop-filter: blur(16px);
+    overflow: hidden;
+    margin-bottom: 32px;
+}
+
+.exp-table-title {
+    font-size: 14px; font-weight: 700;
+    color: #fff; margin: 0 0 20px;
+    letter-spacing: -0.01em;
+}
+
+.exp-table-wrap { overflow-x: auto; }
+
+.exp-table {
+    width: 100%; border-collapse: collapse;
+    font-size: 13px;
+}
+
+.exp-table thead tr {
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+}
+
+.exp-table th {
+    padding: 8px 12px; text-align: left;
+    font-size: 10px; font-weight: 600;
+    color: rgba(255,255,255,0.28);
+    text-transform: uppercase; letter-spacing: 0.08em;
+}
+
+.exp-table tbody tr {
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    transition: background 0.15s;
+}
+
+.exp-table tbody tr:hover { background: rgba(255,255,255,0.03); }
+.exp-table tbody tr:last-child { border-bottom: none; }
+
+.exp-table td {
+    padding: 10px 12px; color: rgba(255,255,255,0.65);
+    vertical-align: middle;
+}
+
+.exp-table-dot {
+    display: inline-block;
+    width: 10px; height: 10px; border-radius: 50%;
+}
+
+.exp-table-amount { font-weight: 700; color: #fff; font-variant-numeric: tabular-nums; }
+
+.exp-share-wrap { display: flex; align-items: center; gap: 8px; }
+
+.exp-share-bar {
+    flex: 1; height: 4px; border-radius: 99px;
+    background: rgba(255,255,255,0.06); overflow: hidden;
+    min-width: 60px;
+}
+
+.exp-share-fill { height: 100%; border-radius: 99px; transition: width 0.5s ease; }
+
+.exp-share-pct {
+    font-size: 11px; font-weight: 600;
+    color: rgba(255,255,255,0.40);
+    min-width: 36px; text-align: right;
+}
+
+/* ─── Skeleton ───────────────────────────────────────────── */
+.exp-skeleton-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.exp-skeleton { height: 320px; border-radius: 16px; }
+
+/* ─── Bottom label ───────────────────────────────────────── */
+.dash-bottom-label {
+    display: flex; align-items: center; gap: 12px;
+    font-size: 11px; color: rgba(255,255,255,0.15);
+    text-transform: uppercase; letter-spacing: 0.12em;
+}
+
+.dash-bottom-line { flex: 0 0 36px; height: 1px; background: rgba(255,255,255,0.08); }
+
+/* ─── Animate in ─────────────────────────────────────────── */
+.animate-in { animation: fadeUp 0.5s ease both; }
+.stagger-1  { animation-delay: 0.08s; }
+.stagger-2  { animation-delay: 0.16s; }
+
+@keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
