@@ -13,6 +13,7 @@ import Login from './pages/Login';
 import Documents from './pages/Documents';
 import './App.css';
 
+
 function ProtectedRoute({ children, roles }) {
   const { user, loading } = useAuth();
   if (loading) return <div className="page-loading">Loading…</div>;
