@@ -11,6 +11,7 @@ import RTIWorkspace from './pages/RTIWorkspace';
 import About from './pages/About';
 import Login from './pages/Login';
 import Documents from './pages/Documents';
+import VoiceAssistant from './components/VoiceAssistant';
 import './App.css';
 
 
@@ -56,9 +57,12 @@ function AppRoutes() {
       </main>
 
       {user && (
-        <footer className="app-footer">
-          <p>⚖️ JanAudit — AI-Powered RTI & Government Transparency System</p>
-        </footer>
+        <>
+          <VoiceAssistant />
+          <footer className="app-footer">
+            <p>⚖️ JanAudit — AI-Powered RTI & Government Transparency System</p>
+          </footer>
+        </>
       )}
     </div>
   );
