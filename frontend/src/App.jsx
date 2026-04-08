@@ -48,7 +48,7 @@ function AppRoutes() {
           <Route
             path="/rti-workspace"
             element={
-              <ProtectedRoute roles={['journalist', 'admin']}>
+              <ProtectedRoute>
                 <RTIWorkspace />
               </ProtectedRoute>
             }

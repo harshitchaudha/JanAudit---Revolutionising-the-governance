@@ -107,6 +107,40 @@
     border-color: var(--green-500);
 }
 
+.rti-lang-toggle {
+    display: flex;
+    gap: 10px;
+    margin-bottom: var(--space-md);
+}
+
+.rti-lang-btn {
+    flex: 1;
+    padding: 10px 16px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+    background: rgba(255, 255, 255, 0.03);
+    color: var(--text-secondary);
+    font-family: var(--font-family);
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    text-align: center;
+}
+
+.rti-lang-btn:hover {
+    background: rgba(255, 255, 255, 0.07);
+    border-color: var(--border-bright);
+    color: var(--text-primary);
+}
+
+.rti-lang-btn.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-color: transparent;
+    color: white;
+    box-shadow: 0 4px 16px rgba(102, 126, 234, 0.35);
+}
+
 .selector-actions {
     display: flex;
     gap: var(--space-sm);

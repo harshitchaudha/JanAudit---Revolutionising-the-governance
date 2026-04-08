@@ -28,10 +28,8 @@ export default function Navbar() {
         { to: '/anomalies', label: 'Anomalies', icon: '⚠️' },
     ];
 
-    // RTI Workspace only for journalist & admin
-    if (user && (user.role === 'journalist' || user.role === 'admin')) {
-        links.push({ to: '/rti-workspace', label: 'RTI Workspace', icon: '📝' });
-    }
+    // RTI Workspace — available for all authenticated users
+    links.push({ to: '/rti-workspace', label: 'RTI Workspace', icon: '📝' });
 
     links.push({ to: '/about', label: 'About', icon: 'ℹ️' });
 

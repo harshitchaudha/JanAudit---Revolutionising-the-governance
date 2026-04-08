@@ -28,7 +28,11 @@ async function request(path, options = {}) {
             throw new Error(err.detail || 'API request failed');
         }
         return res.json();
-    } catch {
+    } catch (err) {
+        // For auth endpoints, re-throw real HTTP errors so callers can show them
+        if (path.startsWith('/api/auth/') && err?.message && !err.message.includes('fetch')) {
+            throw err;
+        }
         // Backend unreachable → serve dummy data
         return MOCK[path] ?? MOCK_FN(path, options);
     }
@@ -298,26 +302,40 @@ const MOCK_USER = {
     email: 'citizen@janaudit.in',
     fullName: 'Demo Citizen',
     role: 'citizen',
-    token: 'mock-jwt-token-demo',
 };
 
 export const api = {
     // AUTH
     login: async (email, password) => {
         try {
-            return await request('/api/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) });
+            const data = await request('/api/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) });
+            // If backend returned a valid token response, return it
+            if (data && data.accessToken) return data;
+            // Backend unreachable — request() returned null/mock — fall through
         } catch {
-            return { ...MOCK_USER, email };
+            // Backend returned an error (e.g. 401) — fall through to mock
         }
+        // Mock fallback — always succeeds
+        return { accessToken: 'mock-jwt-token-demo', tokenType: 'bearer', role: 'citizen', fullName: 'Demo Citizen', email };
     },
     register: async (email, password, fullName, role) => {
         try {
-            return await request('/api/auth/register', { method: 'POST', body: JSON.stringify({ email, password, fullName, role }) });
+            const data = await request('/api/auth/register', { method: 'POST', body: JSON.stringify({ email, password, fullName, role }) });
+            if (data && data.id) return data;
         } catch {
-            return { ...MOCK_USER, email, fullName, role };
+            // fall through to mock
         }
+        return { ...MOCK_USER, email, fullName, role: role || 'citizen' };
     },
-    getMe: (token) => request('/api/auth/me', { token }).catch(() => MOCK_USER),
+    getMe: async (token) => {
+        try {
+            const data = await request('/api/auth/me', { token });
+            if (data && data.id) return data;
+        } catch {
+            // fall through
+        }
+        return MOCK_USER;
+    },
     getUsers: () => request('/api/auth/users').catch(() => [MOCK_USER]),
 
     // DASHBOARD

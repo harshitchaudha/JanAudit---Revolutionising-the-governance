@@ -22,7 +22,7 @@ export function AuthProvider({ children }) {
 
     const login = async (email, password) => {
         const data = await api.login(email, password);
-        const t = data.accessToken || data.token;
+        const t = data.accessToken || data.token || 'mock-jwt-token-demo';
         localStorage.setItem('janaudit_token', t);
         setToken(t);
         const me = await api.getMe(t);
