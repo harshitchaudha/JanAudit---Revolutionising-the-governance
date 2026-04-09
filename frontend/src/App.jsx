@@ -12,6 +12,7 @@ import About from './pages/About';
 import Login from './pages/Login';
 import Documents from './pages/Documents';
 import VoiceAssistant from './components/VoiceAssistant';
+import AskTheAudit from './components/AskTheAudit';
 import './App.css';
 
 
@@ -59,6 +60,7 @@ function AppRoutes() {
       {user && (
         <>
           <VoiceAssistant />
+          <AskTheAudit />
           <footer className="app-footer">
             <p>⚖️ JanAudit — AI-Powered RTI & Government Transparency System</p>
           </footer>
