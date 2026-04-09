@@ -25,11 +25,8 @@ function matchAnomalies(query, anomalies) {
         const proj = (anom.record?.projectName || '').toLowerCase();
         const cat  = (anom.record?.category || '').toLowerCase();
 
-        // Exact type match
         if (q.includes(type)) score += 10;
-        // Department match
         if (dept && q.includes(dept.split(' ')[0])) score += 8;
-        // Project name partial match
         const qWords = q.split(/\s+/);
         for (const word of qWords) {
             if (word.length < 3) continue;
@@ -49,39 +46,22 @@ function matchAnomalies(query, anomalies) {
 function detectIntent(query) {
     const q = query.toLowerCase().trim();
 
-    // Summary / overview intents
     if (/how many|total|count|number of|overview|summary|all anomal/i.test(q))
         return 'summary';
-
-    // Severity / risk
     if (/high.*confidence|high.*risk|severe|critical|dangerous|worst|most serious/i.test(q))
         return 'high_risk';
-
-    // Budget overrun
     if (/budget.*overrun|overrun|over.*budget|exceeded.*budget/i.test(q))
         return 'budget_overrun';
-
-    // Duplicate
     if (/duplicate|double|repeated/i.test(q))
         return 'duplicate';
-
-    // Suspicious / round
     if (/suspicious|round.*amount|round.*figure/i.test(q))
         return 'suspicious_round';
-
-    // Statistical outlier
     if (/outlier|statistical|abnormal|unusual.*spend/i.test(q))
         return 'outlier';
-
-    // Department
     if (/department|dept|which.*department|health|pwd|smart.*city|public.*works|education/i.test(q))
         return 'department';
-
-    // Amount / money
     if (/amount|how.*much|money|expenditure|spend|cost|rupee|crore/i.test(q))
         return 'amount';
-
-    // Help
     if (/help|what.*can.*you|how.*to|guide/i.test(q))
         return 'help';
 
@@ -95,7 +75,7 @@ function generateResponse(query, anomalies, stats) {
     switch (intent) {
         case 'help':
             return {
-                text: `I'm **Ask the Audit** — your AI assistant for exploring detected anomalies. Here's what you can ask me:\n\n` +
+                text: `🏛️ I'm **Ask the Audit** — your AI assistant for exploring detected anomalies in government financial records.\n\nHere are queries you can ask:\n\n` +
                     `• "How many anomalies were found?"\n` +
                     `• "Show me budget overruns"\n` +
                     `• "Which departments have issues?"\n` +
@@ -113,7 +93,7 @@ function generateResponse(query, anomalies, stats) {
             const breakdown = Object.entries(types).map(([t, c]) => `• **${t}**: ${c}`).join('\n');
             const totalAmt = anomalies.reduce((s, a) => s + (a.record?.amount || 0), 0);
             return {
-                text: `📊 **Anomaly Overview**\n\n` +
+                text: `📊 **Anomaly Overview — Audit Summary**\n\n` +
                     `Total anomalies detected: **${anomalies.length}**\n` +
                     `Total flagged amount: **${formatINR(totalAmt)}**\n\n` +
                     `**Breakdown by type:**\n${breakdown}`,
@@ -125,10 +105,10 @@ function generateResponse(query, anomalies, stats) {
             const highRisk = [...anomalies].filter(a => a.confidenceScore >= 0.85)
                 .sort((a, b) => b.confidenceScore - a.confidenceScore);
             if (highRisk.length === 0) {
-                return { text: `No anomalies with confidence ≥ 85% were found.`, anomalies: [] };
+                return { text: `No anomalies with confidence ≥ 85% were found in the current audit records.`, anomalies: [] };
             }
             return {
-                text: `🔴 **High-Risk Anomalies** (confidence ≥ 85%)\n\nFound **${highRisk.length}** high-confidence anomalies:`,
+                text: `🔴 **High-Risk Anomalies** (confidence ≥ 85%)\n\nFound **${highRisk.length}** high-confidence irregularities requiring immediate attention:`,
                 anomalies: highRisk.slice(0, 5),
             };
         }
@@ -136,11 +116,11 @@ function generateResponse(query, anomalies, stats) {
         case 'budget_overrun': {
             const overruns = anomalies.filter(a => a.anomalyType === 'Budget Overrun');
             if (overruns.length === 0) {
-                return { text: `No budget overrun anomalies were detected in the current dataset.`, anomalies: [] };
+                return { text: `No budget overrun anomalies were detected in the current audit dataset.`, anomalies: [] };
             }
             const totalAmt = overruns.reduce((s, a) => s + (a.record?.amount || 0), 0);
             return {
-                text: `💸 **Budget Overruns Detected: ${overruns.length}**\n\nTotal flagged amount: **${formatINR(totalAmt)}**`,
+                text: `💸 **Budget Overruns Detected: ${overruns.length}**\n\nTotal flagged amount: **${formatINR(totalAmt)}**\n\nPer CAG norms, overruns above 10% require prior Finance Department approval.`,
                 anomalies: overruns,
             };
         }
@@ -148,10 +128,10 @@ function generateResponse(query, anomalies, stats) {
         case 'duplicate': {
             const dupes = anomalies.filter(a => a.anomalyType === 'Duplicate Entry Discrepancy');
             if (dupes.length === 0) {
-                return { text: `No duplicate entry discrepancies were found.`, anomalies: [] };
+                return { text: `No duplicate entry discrepancies were found in the current records.`, anomalies: [] };
             }
             return {
-                text: `🔁 **Duplicate Entry Discrepancies: ${dupes.length}**\n\nThese entries appear more than once with identical or very similar details.`,
+                text: `🔁 **Duplicate Entry Discrepancies: ${dupes.length}**\n\nThese entries appear more than once — possible double-booking of invoices.`,
                 anomalies: dupes,
             };
         }
@@ -162,7 +142,7 @@ function generateResponse(query, anomalies, stats) {
                 return { text: `No suspicious round-amount anomalies were found.`, anomalies: [] };
             }
             return {
-                text: `🔢 **Suspicious Round Amounts: ${rounds.length}**\n\nPerfectly round figures are unusual in real procurement — these warrant attention.`,
+                text: `🔢 **Suspicious Round Amounts: ${rounds.length}**\n\nPerfectly round figures are uncommon in genuine procurement invoices — per CVC guidelines, these warrant scrutiny.`,
                 anomalies: rounds,
             };
         }
@@ -175,7 +155,7 @@ function generateResponse(query, anomalies, stats) {
                 return { text: `No statistical outliers detected in the current dataset.`, anomalies: [] };
             }
             return {
-                text: `📈 **Statistical Outliers: ${outliers.length}**\n\nThese expenditures deviate significantly from normal patterns.`,
+                text: `📈 **Statistical Outliers: ${outliers.length}**\n\nThese expenditures deviate significantly from normal patterns in the audit records.`,
                 anomalies: outliers,
             };
         }
@@ -187,7 +167,6 @@ function generateResponse(query, anomalies, stats) {
                 if (!deptMap[d]) deptMap[d] = [];
                 deptMap[d].push(a);
             });
-            // Check if query mentions a specific department
             const q = query.toLowerCase();
             for (const [dept, anoms] of Object.entries(deptMap)) {
                 const dLower = dept.toLowerCase();
@@ -199,7 +178,6 @@ function generateResponse(query, anomalies, stats) {
                     };
                 }
             }
-            // General department breakdown
             const breakdown = Object.entries(deptMap)
                 .sort((a, b) => b[1].length - a[1].length)
                 .map(([d, a]) => `• **${d}**: ${a.length} anomalies (${formatINR(a.reduce((s, x) => s + (x.record?.amount || 0), 0))})`)
@@ -224,7 +202,6 @@ function generateResponse(query, anomalies, stats) {
         }
 
         default: {
-            // General query — try keyword matching
             if (matched.length > 0) {
                 const top = matched.slice(0, 4);
                 return {
@@ -237,19 +214,16 @@ function generateResponse(query, anomalies, stats) {
                     `• A specific anomaly type (budget overrun, duplicate, outlier)\n` +
                     `• A department (health, PWD, smart city)\n` +
                     `• A project name or keyword\n` +
-                    `• "help" for all available queries`,
+                    `• Type **help** for all available queries`,
                 anomalies: [],
             };
         }
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Simple markdown-ish renderer (bold + newlines)
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── Simple markdown-ish renderer (bold + newlines) ─────────
 function renderMarkdown(text) {
     return text.split('\n').map((line, i) => {
-        // Replace **bold** with <strong>
         const parts = [];
         let remaining = line;
         let key = 0;
@@ -263,11 +237,18 @@ function renderMarkdown(text) {
         }
         if (remaining) parts.push(<span key={key++}>{remaining}</span>);
         return (
-            <span key={i} style={{ display: 'block', minHeight: line.trim() ? 'auto' : '0.5em' }}>
+            <span key={i} style={{ display: 'block', minHeight: line.trim() ? 'auto' : '0.4em' }}>
                 {parts.length > 0 ? parts : line}
             </span>
         );
     });
+}
+
+// ─── Confidence class helper ────────────────────────────────
+function confidenceClass(score) {
+    if (score >= 0.8) return 'ata-anom-confidence-high';
+    if (score >= 0.6) return 'ata-anom-confidence-med';
+    return 'ata-anom-confidence-low';
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -275,7 +256,7 @@ function renderMarkdown(text) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 const GREETING = {
-    text: `👋 Hi! I'm **Ask the Audit** — your AI companion for understanding detected anomalies.\n\nAsk me anything about the flagged irregularities, departments, amounts, or anomaly types. Type **help** for a full list of queries.`,
+    text: `🏛️ Namaste! I'm **Ask the Audit** — your AI-powered companion for analysing detected anomalies in government financial records.\n\nYou may ask about flagged irregularities, departments, amounts, or anomaly types. Type **help** for a full list of queries.`,
     anomalies: [],
     isBot: true,
 };
@@ -291,7 +272,6 @@ export default function AskTheAudit() {
     const chatEndRef = useRef(null);
     const inputRef = useRef(null);
 
-    // Load anomaly data on first open
     useEffect(() => {
         if (isOpen && !dataLoaded) {
             loadData();
@@ -301,7 +281,6 @@ export default function AskTheAudit() {
         }
     }, [isOpen]);
 
-    // Scroll to bottom on new messages
     useEffect(() => {
         chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
@@ -327,12 +306,10 @@ export default function AskTheAudit() {
         const trimmed = input.trim();
         if (!trimmed) return;
 
-        // Add user message
         const userMsg = { text: trimmed, isBot: false };
         setMessages(prev => [...prev, userMsg]);
         setInput('');
 
-        // Simulate thinking delay
         setLoading(true);
         setTimeout(() => {
             const response = generateResponse(trimmed, anomalies, stats);
@@ -350,19 +327,16 @@ export default function AskTheAudit() {
     };
 
     const handleQuickQuery = (query) => {
-        setInput(query);
+        setInput('');
+        const userMsg = { text: query, isBot: false };
+        setMessages(prev => [...prev, userMsg]);
+        setLoading(true);
         setTimeout(() => {
-            const userMsg = { text: query, isBot: false };
-            setMessages(prev => [...prev, userMsg]);
-            setLoading(true);
-            setTimeout(() => {
-                const response = generateResponse(query, anomalies, stats);
-                const botMsg = { ...response, isBot: true };
-                setMessages(prev => [...prev, botMsg]);
-                setLoading(false);
-            }, 400 + Math.random() * 400);
-            setInput('');
-        }, 50);
+            const response = generateResponse(query, anomalies, stats);
+            const botMsg = { ...response, isBot: true };
+            setMessages(prev => [...prev, botMsg]);
+            setLoading(false);
+        }, 500 + Math.random() * 400);
     };
 
     return (
@@ -381,7 +355,7 @@ export default function AskTheAudit() {
                                 <span className="ata-subtitle">
                                     {dataLoaded
                                         ? `${anomalies.length} anomalies loaded`
-                                        : 'Loading data…'
+                                        : 'Connecting to audit data…'
                                     }
                                 </span>
                             </div>
@@ -391,21 +365,29 @@ export default function AskTheAudit() {
                         </button>
                     </div>
 
+                    {/* Government disclaimer banner */}
+                    <div className="ata-govt-notice">
+                        <span className="ata-govt-notice-icon">🛡️</span>
+                        RTI Act 2005 Compliant — AI-Assisted Audit Analysis
+                    </div>
+
                     {/* Quick Queries */}
                     {messages.length <= 1 && (
                         <div className="ata-quick-queries">
                             {[
-                                '📊 Overview',
-                                '🔴 High-risk anomalies',
-                                '💸 Budget overruns',
-                                '🏛️ By department',
+                                { label: '📊 Overview', query: 'Overview' },
+                                { label: '🔴 High Risk', query: 'High-risk anomalies' },
+                                { label: '💸 Budget Overruns', query: 'Budget overruns' },
+                                { label: '🏛️ By Department', query: 'By department' },
+                                { label: '🔁 Duplicates', query: 'Duplicate entries' },
+                                { label: '💰 Top Amounts', query: 'Largest amounts' },
                             ].map((q) => (
                                 <button
-                                    key={q}
+                                    key={q.query}
                                     className="ata-quick-btn"
-                                    onClick={() => handleQuickQuery(q.replace(/^..\s/, ''))}
+                                    onClick={() => handleQuickQuery(q.query)}
                                 >
-                                    {q}
+                                    {q.label}
                                 </button>
                             ))}
                         </div>
@@ -429,7 +411,7 @@ export default function AskTheAudit() {
                                                         <span className="ata-anom-type-badge">
                                                             {a.anomalyType}
                                                         </span>
-                                                        <span className="ata-anom-confidence">
+                                                        <span className={`ata-anom-confidence ${confidenceClass(a.confidenceScore)}`}>
                                                             {Math.round(a.confidenceScore * 100)}%
                                                         </span>
                                                     </div>
@@ -443,7 +425,7 @@ export default function AskTheAudit() {
                                                         </span>
                                                     </div>
                                                     <p className="ata-anom-desc">
-                                                        {a.description?.slice(0, 140)}…
+                                                        {a.description?.slice(0, 120)}…
                                                     </p>
                                                 </div>
                                             ))}
@@ -487,10 +469,15 @@ export default function AskTheAudit() {
                             title="Send"
                             id="ask-the-audit-send"
                         >
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                                 <path d="M22 2L11 13" /><path d="M22 2L15 22L11 13L2 9L22 2Z" />
                             </svg>
                         </button>
+                    </div>
+
+                    {/* Footer */}
+                    <div className="ata-footer">
+                        POWERED BY JANAUDIT AI · SATYAMEVA JAYATE
                     </div>
                 </div>
             )}
@@ -501,8 +488,12 @@ export default function AskTheAudit() {
                 title="Ask the Audit"
                 id="ask-the-audit-fab"
             >
-                {isOpen ? '✕' : '⚖️'}
-                {!isOpen && <span className="ata-fab-label">Ask the Audit</span>}
+                {isOpen ? '✕' : (
+                    <>
+                        <span className="ata-fab-emblem">⚖️</span>
+                        <span className="ata-fab-label">Ask the Audit</span>
+                    </>
+                )}
             </button>
         </div>
     );
